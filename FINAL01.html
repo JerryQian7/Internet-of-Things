@@ -1,0 +1,629 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset='UTF-8' />
+  <title>GID 01 Final Project</title>
+  <link rel="stylesheet" type="text/css" href="styles.css" />
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="http://www.w3schools.com/lib/w3data.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBRQQ4iVEx6ijcbOgwtc7Y95i7tMdlqtvw&libraries=visualization&v=3.39"></script>
+
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://code.highcharts.com/modules/exporting.js"></script>
+  <script src="https://code.highcharts.com/modules/export-data.js"></script>
+  <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+  <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
+
+  <!-- JS, Popper.js, and jQuery -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+  <!-- Rounded switch -->
+  <div id='top' style="color: white; padding-left: 20px; padding-top:20px; padding-bottom:10px;">
+    <input type="range" min="-3" max="3" value="0" id="myRange">
+    <p><i class="fas fa-calendar-day"></i><span id="demo" class="lead"></span></p>
+    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+          <label class="btn btn-secondary">
+          <input type="radio" name="options" id="option1" autocomplete="off" > San Jose
+            </label>
+              <label class="btn btn-secondary">
+          <input type="radio" name="options" id="option2" autocomplete="off"> Los Angeles
+            </label>
+              <label class="btn btn-secondary active">
+          <input type="radio" name="options" id="option3" autocomplete="off" checked> San Diego
+            </label>
+    </div>
+  </div>
+  <div style="height:750px; margin-left:0px;">
+    <div class="myRow" style="height:750px;">
+      <div class="myColumn1" id="map" style="height:750px;"></div>
+      <div class="myColumn2" style="height:750px; width: 575px; overflow-y:auto; margin-right:0; padding-left: 20px">
+          <h1 >Hypothesis</h1>
+          <hr >
+          <p class="lead">Our hypothesis is that as it gets more <span class="text-primary">windy</span> and cloudy in a geographic area, 
+              the <span class="text-danger">humidity</span> for that micro-climate goes up.</p>
+          <p class="lead" style="margin-left: 20px;"> <span class="text-primary">Wind Intensity <i class="fas fa-arrow-up"></i></span> &nbsp;
+                  <span class="text-danger">Humidity <i class="fas fa-arrow-up"></i></span></p>
+          <p class="lead" style="margin-left: 20px;"> <span class="text-success">Cloud Intensity <i class="fas fa-arrow-up"></i></span> &nbsp;
+                  <span class="text-danger">Humidity <i class="fas fa-arrow-up"></i></span></p>
+        <div class="w3-container w3-card w3-white w3-round w3-margin-right w3-margin-left"><br>
+          <div class="w3-row-padding" style="margin:0 -10px">
+
+            <table class="smalltableList" id="groupsTable">
+              <thead>
+                <tr>
+                  <th>Temperature</th>
+                  <th>Humidity</th>
+                  <th>Wind Speed</th>
+                  <th>Wind Degree </th>
+                  <th>Cloudiness</th>
+                  <th>Location</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+            <br>
+          </div>
+        </div>
+        <div id="weatherchart"></div>
+        <div id="cloudchart"></div>
+        <br>
+        <span id="debugStr"></span>
+
+      </div>
+    </div>
+  </div>
+  <script defer>
+    var slider = document.getElementById("myRange");
+    var output = document.getElementById("demo");
+    output.innerHTML = `  June ${9+parseInt(slider.value)}, 2020`;
+
+    slider.oninput = function () {
+      output.innerHTML = `  June ${9+parseInt(this.value)}, 2020`;
+      renderLayers(this.value)
+    }
+    // San Jose
+    op1 = document.getElementById('option1')
+    op1.addEventListener('click', () => {
+        map.setCenter({lat: 37.4382, lng: -121.9863});
+        map.setZoom(12);
+    })
+    // Los Angeles
+    op1 = document.getElementById('option2')
+    op1.addEventListener('click', () => {
+        map.setCenter({lat: 34.0522, lng: -118.2437});
+        map.setZoom(9);
+    })
+    // San Diego
+    op1 = document.getElementById('option3')
+    op1.addEventListener('click', () => {
+        map.setCenter({ lat: 32.8269265, lng: -117.255484 });
+        map.setZoom(12);
+    })
+  </script>
+  <script>
+
+    // source: Natural Earth http://www.naturalearthdata.com/ via geojson.xyz
+    // Set your Google Maps API key here or via environment variable
+    //const GOOGLE_MAPS_API_KEY = "AIzaSyBRQQ4iVEx6ijcbOgwtc7Y95i7tMdlqtvw"
+    //const GOOGLE_MAPS_API_URL = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=visualization&v=3.39`;
+
+    const ambientLight = new deck.AmbientLight({
+      color: [255, 255, 255],
+      intensity: 1.0
+    });
+
+    const pointLight1 = new deck.PointLight({
+      color: [255, 255, 255],
+      intensity: 0.8,
+      position: [-0.144528, 49.739968, 80000]
+    });
+
+    const pointLight2 = new deck.PointLight({
+      color: [255, 255, 255],
+      intensity: 0.8,
+      position: [-3.807751, 54.104682, 8000]
+    });
+
+    const lightingEffect = new deck.LightingEffect({ ambientLight, pointLight1, pointLight2 });
+
+    const material = {
+      ambient: 0.64,
+      diffuse: 0.6,
+      shininess: 32,
+      specularColor: [51, 51, 51]
+    };
+
+    const INITIAL_VIEW_STATE = {
+      longitude: -117.217,
+      latitude: 32.8512,
+      zoom: 6.6,
+      minZoom: 5,
+      maxZoom: 15,
+      pitch: 40.5,
+      bearing: -27.396674584323023
+    };
+
+    const colorRange = [
+      [1, 152, 189],
+      [73, 227, 206],
+      [216, 254, 181],
+      [254, 237, 177],
+      [254, 173, 84],
+      [209, 55, 78]
+    ];
+
+    const elevationScale = { min: 1, max: 50 };
+
+    var MAC;
+    var map;
+    var markers = [];
+    var COORDS = []
+
+
+    function updateMarkers() {
+      var xmlhttp = new XMLHttpRequest();
+      xmlhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          var statsObj = JSON.parse(this.responseText);
+          statsObj.devices.forEach(addMarker);
+        }
+      };
+      jObj = { cmd: "LOCATIONS", gid: "all" };
+      var jStr = JSON.stringify(jObj);
+      var urlStr = "http://dsc-iot.ucsd.edu/api_gid01/API.py";
+      xmlhttp.open("POST", urlStr, true);
+      xmlhttp.setRequestHeader('Content-Type', 'application/json');
+      xmlhttp.send(jStr);
+    }
+
+
+    // Fetching Heatmap Data
+    const DATA_URL = [{ "devmac": "", "lat": "37.37", "lon": "-122.04", "COORDINATES": [-122.04, 37.37], "WEIGHT": 4.6 }, { "devmac": "CC:50:E3:AF:E1:B4", "lat": "32.93", "lon": "-117.2", "COORDINATES": [-117.2, 32.93], "WEIGHT": 2.6 }, { "devmac": "3C:71:BF:63:DC:D0", "lat": "32.85", "lon": "-117.22", "COORDINATES": [-117.22, 32.85], "WEIGHT": 2.6 }, { "devmac": "3C:71:BF:6C:A9:7C", "lat": "32.87", "lon": "-117.22", "COORDINATES": [-117.22, 32.87], "WEIGHT": 2.6 }, { "devmac": "CC:50:E3:A8:EB:3C", "lat": "32.86", "lon": "-117.21", "COORDINATES": [-117.21, 32.86], "WEIGHT": 2.6 }, { "devmac": "3C:71:BF:64:36:C0", "lat": "32.85", "lon": "-117.2", "COORDINATES": [-117.2, 32.85], "WEIGHT": 2.6 }, { "devmac": "3C:71:BF:6C:62:2C", "lat": "37.4", "lon": "-121.94", "COORDINATES": [-121.94, 37.4], "WEIGHT": 0.89 }, { "devmac": "80:7D:3A:E9:67:5C", "lat": "32.87", "lon": "-117.22", "COORDINATES": [-117.22, 32.87], "WEIGHT": 2.6 }, { "devmac": "3C:71:BF:62:E7:FC", "lat": "32.87", "lon": "-117.22", "COORDINATES": [-117.22, 32.87], "WEIGHT": 2.6 }, { "devmac": "CC:50:E3:B0:92:B4", "lat": "32.87", "lon": "-117.22", "COORDINATES": [-117.22, 32.87], "WEIGHT": 2.6 }, { "devmac": "CC:50:E3:B0:21:78", "lat": "32.87", "lon": "-117.21", "COORDINATES": [-117.21, 32.87], "WEIGHT": 2.6 }, { "devmac": "CC:50:E3:A1:45:2C", "lat": "32.87", "lon": "-117.22", "COORDINATES": [-117.22, 32.87], "WEIGHT": 2.6 }, { "devmac": "80:7D:3A:BA:E2:14", "lat": "32.87", "lon": "-117.24", "COORDINATES": [-117.24, 32.87], "WEIGHT": 2.6 }, { "devmac": "CC:50:E3:AF:E4:68", "lat": "37.78", "lon": "-122.29", "COORDINATES": [-122.29, 37.78], "WEIGHT": 9.3 }, { "devmac": "A4:CF:12:43:71:60", "lat": "37.49", "lon": "-121.93", "COORDINATES": [-121.93, 37.49], "WEIGHT": 5.1 }, { "devmac": "3C:71:BF:6C:5D:B4", "lat": "32.87", "lon": "-117.22", "COORDINATES": [-117.22, 32.87], "WEIGHT": 2.6 }, { "devmac": "3C:71:BF:63:81:BC", "lat": "32.87", "lon": "-117.25", "COORDINATES": [-117.25, 32.87], "WEIGHT": 2.6 }, { "devmac": "A4:CF:12:43:71:4C", "lat": "32.87", "lon": "-117.22", "COORDINATES": [-117.22, 32.87], "WEIGHT": 2.6 }, { "devmac": "CC:50:E3:AF:E3:80", "lat": "37.39", "lon": "-122.01", "COORDINATES": [-122.01, 37.39], "WEIGHT": 1.34 }, { "devmac": "A4:CF:12:43:52:D0", "lat": "37.74", "lon": "-122.26", "COORDINATES": [-122.26, 37.74], "WEIGHT": 7.2 }, { "devmac": "CC:50:E3:A9:79:3C", "lat": "32.86", "lon": "-117.23", "COORDINATES": [-117.23, 32.86], "WEIGHT": 2.6 }, { "devmac": "3C:71:BF:63:E6:30", "lat": "37.71", "lon": "-122.42", "COORDINATES": [-122.42, 37.71], "WEIGHT": 9.3 }, { "devmac": "3C:71:BF:6F:13:B8", "lat": "37.37", "lon": "-122.04", "COORDINATES": [-122.04, 37.37], "WEIGHT": 5.1 }]
+    var statsObj;
+    function getHeatMapData(day) {
+      var xmlhttp = new XMLHttpRequest();
+      xmlhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          statsObj = JSON.parse(this.responseText);
+          statsObj.forEach(addData)
+        }
+      };
+      var jObj = { cmd: "WIND_HEATMAP" + day.toString() };
+      var jStr = JSON.stringify(jObj);
+      var urlStr = "http://dsc-iot.ucsd.edu/api_gid01/API.py";
+      xmlhttp.open("POST", urlStr, true);
+      xmlhttp.setRequestHeader('Content-Type', 'application/json');
+      xmlhttp.send(jStr);
+      return statsObj;
+    }
+
+    function addData(arr, index) {
+      var new_arr = {}
+      new_arr["COORDINATES"] = arr['COORDINATES']
+      new_arr["WEIGHT"] = parseFloat(arr['WEIGHT'])
+      DATA_URL[index] = new_arr
+    }
+
+    // Fetching Hexagon Data
+    function getHexData(day) {
+      var xmlhttp = new XMLHttpRequest();
+      xmlhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          var statsObj = JSON.parse(this.responseText);
+          COORDS.length = 0
+          statsObj.forEach(addHumidity);
+        }
+      };
+      jObj = { cmd: "HEXAGON" + day.toString() };
+      var jStr = JSON.stringify(jObj);
+      var urlStr = "http://dsc-iot.ucsd.edu/api_gid01/API.py";
+      xmlhttp.open("POST", urlStr, true);
+      xmlhttp.setRequestHeader('Content-Type', 'application/json');
+      xmlhttp.send(jStr);
+    }
+
+    function addHumidity(arr) {
+      lat = parseFloat(arr[0])
+      lng = parseFloat(arr[1])
+      hum = parseFloat(arr[2])
+      for (i = 0; i < hum; i++) {
+        COORDS.push({ position: [lng, lat] })
+      }
+    }
+
+    function addMarker(obj) {
+      lat_co = parseFloat(obj['dev_lat'])
+      lon_co = parseFloat(obj['dev_long'])
+      var loc = { lat: lat_co, lng: lon_co };
+      var marker = new google.maps.Marker({
+        position: loc,
+        map: map,
+        icon: 'http://www.simpleimageresizer.com/_uploads/photos/a25069a0/trident-emblem_1f531_20x20.png',
+        title: `Group ${obj['groupID']}'s Device`
+      });
+      // zoom if clicked example
+      marker.addListener('click', function () {
+        MAC = obj['mac']
+        map.setZoom(18);
+        map.setCenter(marker.getPosition());
+        //exinfowindow.open(map, marker);
+        weatherChart()
+        cloudChart()
+      });
+
+      // display info on mouseover
+      marker.addListener('mouseover', function () {
+        // do a popup with current info
+        var content = `<p><b>Group ID:</b> ${obj['groupID']}</p>`
+        content += `<p><b>Device MAC:</b> ${obj['mac']}</p>`
+        content += `<p><b>Last Seen:</b> ${obj['lastseen']}</p>`
+        infowindow.setContent(content)
+        infowindow.open(map, marker);
+      });
+
+      // hide info if move moved away
+      marker.addListener('mouseout', function () {
+        // remove popup
+        infowindow.close();
+      });
+      markers.push(marker)
+    }
+
+
+  map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 12,
+        center: { lat: 32.8269265, lng: -117.255484 },
+        title: 'UCSD CSE191',
+        styles: [
+          { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
+          { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
+          { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
+          {
+            featureType: 'administrative.locality',
+            elementType: 'labels.text.fill',
+            stylers: [{ color: '#d59563' }]
+          },
+          {
+            featureType: 'poi',
+            elementType: 'labels.text.fill',
+            stylers: [{ color: '#d59563' }]
+          },
+          {
+            featureType: 'poi.park',
+            elementType: 'geometry',
+            stylers: [{ color: '#263c3f' }]
+          },
+          {
+            featureType: 'poi.park',
+            elementType: 'labels.text.fill',
+            stylers: [{ color: '#6b9a76' }]
+          },
+          {
+            featureType: 'road',
+            elementType: 'geometry',
+            stylers: [{ color: '#38414e' }]
+          },
+          {
+            featureType: 'road',
+            elementType: 'geometry.stroke',
+            stylers: [{ color: '#212a37' }]
+          },
+          {
+            featureType: 'road',
+            elementType: 'labels.text.fill',
+            stylers: [{ color: '#9ca5b3' }]
+          },
+          {
+            featureType: 'road.highway',
+            elementType: 'geometry',
+            stylers: [{ color: '#746855' }]
+          },
+          {
+            featureType: 'road.highway',
+            elementType: 'geometry.stroke',
+            stylers: [{ color: '#1f2835' }]
+          },
+          {
+            featureType: 'road.highway',
+            elementType: 'labels.text.fill',
+            stylers: [{ color: '#f3d19c' }]
+          },
+          {
+            featureType: 'transit',
+            elementType: 'geometry',
+            stylers: [{ color: '#2f3948' }]
+          },
+          {
+            featureType: 'transit.station',
+            elementType: 'labels.text.fill',
+            stylers: [{ color: '#d59563' }]
+          },
+          {
+            featureType: 'water',
+            elementType: 'geometry',
+            stylers: [{ color: '#17263c' }]
+          },
+          {
+            featureType: 'water',
+            elementType: 'labels.text.fill',
+            stylers: [{ color: '#515c6d' }]
+          },
+          {
+            featureType: 'water',
+            elementType: 'labels.text.stroke',
+            stylers: [{ color: '#17263c' }]
+          }
+        ]
+      });
+
+    function renderLayers(day) {
+      getHexData(day)
+      getHeatMapData(day);
+      // TODO: Move to Mapbox
+      const overlay = new deck.GoogleMapsOverlay({
+        initalViewState: INITIAL_VIEW_STATE,
+        layers: [
+          new deck.HeatmapLayer({
+            data: DATA_URL,
+            id: 'heatmap-layer',
+            pickable: false,
+            getPosition: d => d.COORDINATES,
+            getWeight: d => d.WEIGHT,
+            radiusPixels: 50,
+            intensity: 5,
+            threshold: 0.03,
+            colorRange: [[204, 255, 255], [51, 255, 255], [51, 153, 255], [0, 0, 255], [0, 0, 153], [0, 0, 102]]
+          }),
+          new deck.HexagonLayer({
+            id: 'hexagon-layer',
+            data: COORDS,
+            radius: 300,
+            colorRange: colorRange,
+            coverage: 0.5,
+            elevationRange: [0, 20000],
+            extruded: true,
+            //onHover: this.props.onHover,
+            //pickable: Boolean(this.props.onHover),
+            material: material,
+            transitions: {
+              elevationScale: 3000
+            }
+          })
+        ]
+      });
+      updateMarkers()
+      overlay.setMap(map);
+    };
+    renderLayers(0)
+
+
+    // Final Viewer Code
+
+    var grpTimer;
+    var gTable = document.getElementById('groupsTable');
+
+    // now continuously get server updates
+    grpTimer = setInterval(updateGroups, 5000);    // 5 seconds
+
+    // get activity update
+    updateGroups();
+
+    //============== UPDATE Students TABLE =================
+    function clearGroups() {
+      // clear all except first row
+      var x = gTable.rows.length;
+      for (var i = x - 1; i > 0; i--)
+        gTable.deleteRow(i);
+
+    }
+
+    function refreshGroups(s) {
+      var row = gTable.insertRow();
+      //row.setAttribute("onclick","drawCount("+s.groupID+")"); 
+      var temp = row.insertCell(0);
+      var hum = row.insertCell(1);
+      var windspeed = row.insertCell(2);
+      var windeg = row.insertCell(3);
+      var cloud = row.insertCell(4);
+      var city = row.insertCell(5);
+      // fill cells:
+      temp.innerHTML = s[0];
+      hum.innerHTML = s[1];
+      windspeed.innerHTML = s[2];
+      windeg.innerHTML = s[3];
+      cloud.innerHTML = s[4];
+      city.innerHTML = s[5];
+      //var color = s.color;
+      //cellStatus.innerHTML = "<p style='color:" + color + ";'>" +s.status+"</p>";
+    }
+
+    // load the status of all table entries
+    function updateGroups() {
+      var xmlhttp = new XMLHttpRequest();
+      xmlhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          var statsObj = JSON.parse(this.responseText);
+          clearGroups();
+          // got data
+          // lets loop thru and fill in the data
+          statsObj.forEach(refreshGroups);
+        }
+      };
+
+      var jObj;
+      jObj = { cmd: "CURRENT_WEATHER", devmac: MAC };
+      var jStr = JSON.stringify(jObj);
+      var urlStr = "http://dsc-iot.ucsd.edu/api_gid01/API.py";
+      xmlhttp.open("POST", urlStr, true);
+      xmlhttp.setRequestHeader('Content-Type', 'application/json');
+      xmlhttp.send(jStr);
+    }
+
+
+    function debugStr(str) {
+      var x = document.getElementById("debugStr");
+      x.innerHTML = str;
+    }
+
+    function weatherChart() {
+
+      var xmlhttp = new XMLHttpRequest();
+      xmlhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          var statsObj = JSON.parse(this.responseText);
+          weather(statsObj);
+        }
+      };
+
+      var jObj;
+      jObj = { cmd: "MCDATA", devmac: MAC };
+      console.log(jObj)
+      var jStr = JSON.stringify(jObj);
+      var urlStr = "http://dsc-iot.ucsd.edu/api_gid01/API.py";
+      xmlhttp.open("POST", urlStr, true);
+      xmlhttp.setRequestHeader('Content-Type', 'application/json');
+      xmlhttp.send(jStr);
+
+      function weather(obj) {
+        Highcharts.chart('weatherchart', {
+          chart: {
+            zoomType: 'xy'
+          },
+          title: {
+            text: 'Wind Speed and Humidity of the Last 24 Hours'
+          },
+          xAxis: [{
+            categories: obj[0],
+            crosshair: true
+          }],
+          yAxis: [{ // Primary yAxis
+            labels: {
+              format: '{value} mph',
+              style: {
+                color: Highcharts.getOptions().colors[1]
+              }
+            },
+            title: {
+              text: 'Wind Speed',
+              style: {
+                color: Highcharts.getOptions().colors[1]
+              }
+            }
+          }, { // Secondary yAxis
+            title: {
+              text: 'Humidity',
+              style: {
+                color: Highcharts.getOptions().colors[0]
+              }
+            },
+            labels: {
+              format: '{value} %',
+              style: {
+                color: Highcharts.getOptions().colors[0]
+              }
+            },
+            opposite: true
+          }],
+          tooltip: {
+            shared: true
+          },
+          legend: {
+            layout: 'vertical',
+            align: 'left',
+            x: 120,
+            verticalAlign: 'top',
+            y: 100,
+            floating: true,
+            backgroundColor:
+              Highcharts.defaultOptions.legend.backgroundColor || // theme
+              'rgba(255,255,255,0.25)'
+          },
+          series: [{
+            name: 'Humidity',
+            type: 'column',
+            yAxis: 1,
+            data: obj[1],
+            tooltip: {
+              valueSuffix: '%'
+            }
+
+          }, {
+            name: 'Wind Speed',
+            type: 'spline',
+            data: obj[2],
+            tooltip: {
+              valueSuffix: 'mph'
+            }
+          }]
+        });
+      }
+
+    }
+
+    
+    function cloudChart() {
+      var xmlhttp = new XMLHttpRequest();
+      xmlhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          var statsObj = JSON.parse(this.responseText);
+          cloud(statsObj);
+        }
+      };
+
+      var jObj;
+      jObj = { cmd: "CLOUD", devmac: MAC };
+      var jStr = JSON.stringify(jObj);
+      var urlStr = "http://dsc-iot.ucsd.edu/api_gid01/API.py";
+      xmlhttp.open("POST", urlStr, true);
+      xmlhttp.setRequestHeader('Content-Type', 'application/json');
+      xmlhttp.send(jStr);
+
+      function cloud(obj) {
+        Highcharts.chart('cloudchart', {
+          chart: {
+            type: 'line'
+          },
+          title: {
+            text: 'Cloudiness of Last 12 Hours'
+          },
+          xAxis: {
+            categories: obj[0]
+          },
+          yAxis: {
+            title: {
+              text: 'Cloudiness (%)'
+            }
+          },
+          plotOptions: {
+            line: {
+              dataLabels: {
+                enabled: true
+              },
+              enableMouseTracking: false
+            }
+          },
+          series: [{
+            name: 'Cloudiness',
+            data: obj[1]
+          }]
+        });
+      }
+
+    }
+
+  </script>
+</body>
+
+</html>
